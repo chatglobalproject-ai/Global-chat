@@ -70,7 +70,7 @@ footer {
   Your voice matters.
 </p>
 
-<button onclick="alert('Global Chat is coming soon!')">
+<button onclick="openAuthModal()">
   Join the Community
 </button>
 
@@ -93,5 +93,110 @@ const firebaseConfig = {
   appId: "1:11486686992:web:bd23613b3cda1350a7ff95"
 };
 </script>
+  <!-- Global Chat: Account Form -->
+<div id="authModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.8); z-index:9999; justify-content:center; align-items:center; padding:20px;">
+  <div style="background:#fff; color:#222; padding:25px; border-radius:12px; width:100%; max-width:360px; box-sizing:border-box;">
+    <button onclick="closeAuthModal()" style="float:right; cursor:pointer;">✕</button>
+
+    <h2 id="authTitle">Join Global Chat</h2>
+    <p id="authDescription">Create your account to join the conversation.</p>
+
+    <form id="authForm">
+      <label for="authEmail">Email address</label>
+      <input id="authEmail" type="email" required autocomplete="email"
+        style="width:100%; box-sizing:border-box; padding:12px; margin:8px 0 15px;">
+
+      <label for="authPassword">Password</label>
+      <input id="authPassword" type="password" required minlength="6"
+        autocomplete="new-password"
+        style="width:100%; box-sizing:border-box; padding:12px; margin:8px 0 15px;">
+
+      <button id="authSubmit" type="submit"
+        style="width:100%; padding:12px; cursor:pointer;">
+        Create Account
+      </button>
+    </form>
+
+    <p id="authMessage" role="status" aria-live="polite"></p>
+
+    <button id="authToggle" type="button" onclick="toggleAuthMode()"
+      style="margin-top:10px; cursor:pointer;">
+      Already have an account? Log in
+    </button>
+  </div>
+</div>
+
+<script>
+  let authMode = "signup";
+
+  function openAuthModal() {
+    document.getElementById("authModal").style.display = "flex";
+    document.getElementById("authMessage").textContent = "";
+  }
+
+  function closeAuthModal() {
+    document.getElementById("authModal").style.display = "none";
+  }
+
+  function toggleAuthMode() {
+    authMode = authMode === "signup" ? "login" : "signup";
+
+    document.getElementById("authTitle").textContent =
+      authMode === "signup" ? "Join Global Chat" : "Welcome Back";
+
+    document.getElementById("authDescription").textContent =
+      authMode === "signup"
+        ? "Create your account to join the conversation."
+        : "Log in to your account.";
+
+    document.getElementById("authSubmit").textContent =
+      authMode === "signup" ? "Create Account" : "Log In";
+
+    document.getElementById("authPassword").autocomplete =
+      authMode === "signup" ? "new-password" : "current-password";
+
+    document.getElementById("authToggle").textContent =
+      authMode === "signup"
+        ? "Already have an account? Log in"
+        : "Need an account? Sign up";
+
+    document.getElementById("authMessage").textContent = "";
+  }
+
+  document.getElementById("authForm").addEventListener("submit", async function(event) {
+    event.preventDefault();
+
+    const email = document.getElementById("authEmail").value.trim();
+    const password = document.getElementById("authPassword").value;
+    const message = document.getElementById("authMessage");
+    const submit = document.getElementById("authSubmit");
+
+    submit.disabled = true;
+    message.textContent = "Please wait...";
+
+    try {
+      if (authMode === "signup") {
+        await auth.createUserWithEmailAndPassword(email, password);
+        message.textContent = "Account created successfully!";
+      } else {
+        await auth.signInWithEmailAndPassword(email, password);
+        message.textContent = "Logged in successfully!";
+      }
+    } catch (error) {
+      const messages = {
+        "auth/email-already-in-use": "That email already has an account. Try logging in.",
+        "auth/invalid-email": "Please enter a valid email address.",
+        "auth/weak-password": "Choose a stronger password with at least 6 characters.",
+        "auth/invalid-credential": "Email or password is incorrect.",
+        "auth/network-request-failed": "Connection problem. Please try again."
+      };
+
+      message.textContent =
+        messages[error.code] || "Something went wrong. Please try again.";
+    } finally {
+      submit.disabled = false;
+    }
+  });
+      </script>
 </body>
 </html>
